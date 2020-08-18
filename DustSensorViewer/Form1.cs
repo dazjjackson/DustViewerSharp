@@ -497,8 +497,58 @@ namespace DustSensorViewer
         const byte PMS_HEADER2 = 0x4D;
         private void parse_PMS(byte[] raw_input)
         {
-            // datasheet : https://drive.google.com/file/d/0B6jowxS0fbXsQi1MSHR5UzFPa3c/view
-            // packet format: 42 4D CF_1.0_High CF_1.0_Low ...
+            /*
+                |----|------------------------------|-------------------------------------------------------|
+                | 00 | Start character1				| 0x42 (Fixed)											|
+                |----|------------------------------|-------------------------------------------------------|
+                | 01 | Start character2				| 0x4d (Fixed)											|
+                |----|------------------------------|-------------------------------------------------------|
+                | 02 | Frame length high 8 bits		| Frame length=2x13+2(data+check bytes)					|
+                | 03 |  Frame length low 8 bits		|														|
+                |----|------------------------------|-------------------------------------------------------|
+                | 04 | Data 1 high 8 bits			| Data1 refers to PM1.0 concentration unit				|
+                | 05 | Data 1 low 8 bits			| μ g/m3（CF=1，standard particle)						|
+                |----|------------------------------|-------------------------------------------------------|
+                | 06 | Data2 high 8 bits			| Data2 refers to PM2.5 concentration unit				|
+                | 07 | Data2 low 8 bits				| μ g/m3（CF=1，standard particle)						|
+                |----|------------------------------|-------------------------------------------------------|
+                | 08 | Data3 high 8 bits			| Data3 refers to PM10 concentration unit				|
+                | 09 | Data3 low 8 bits				| μ g/m3（CF=1，standard particle)						|
+                |----|------------------------------|-------------------------------------------------------|
+                | 10 | Data4 high 8 bits			| Data4 refers to PM1.0 concentration unit				|
+                | 11 | Data4 low 8 bits				| μ g/m3 (under atmospheric environment)                |
+                |----|------------------------------|-------------------------------------------------------|
+                | 12 | Data5 high 8 bits			| Data 5 refers to PM2.5 concentration unit             |
+                | 13 | Data5 low 8 bits				| μ g/m3 (under atmospheric environment)                |
+                |----|------------------------------|-------------------------------------------------------|
+                | 14 | Data6 high 8 bits			| Data 6 refers to PM10 concentration unit				|
+                | 15 | Data6 low 8 bits				| μ g/m3 (under atmospheric environment)  	    		|
+                |----|------------------------------|-------------------------------------------------------|
+                | 16 | Data7 high 8 bits			| Data7 indicates the number of particles				|
+                | 17 | Data7 low 8 bits				| with diameter beyond 0.3 um in 0.1 L of air.			|
+                |----|------------------------------|-------------------------------------------------------|
+                | 18 | Data8 high 8 bits			| Data 8 indicates the number of particles				|
+                | 19 | Data8 low 8 bits				| with diameter beyond 0.5 um in 0.1 L of air.			|
+                |----|------------------------------|-------------------------------------------------------|
+                | 20 | Data9 high 8 bits			| Data 9 indicates the number of particles				|
+                | 21 | Data9 low 8 bits				| with diameter beyond 1.0 um in 0.1 L of air.			|
+                |----\------------------------------|-------------------------------------------------------|
+                | 22 | Data10 high 8 bits			| Data10 indicates the number of particles				|
+                | 23 | Data10 low 8 bits			| with diameter beyond 2.5 um in 0.1 L of air.			|
+                |----|------------------------------|-------------------------------------------------------|
+                | 24 | Data11 high 8 bits			| Data11 indicates the number of particles				|
+                | 25 | Data11 low 8 bits			| with diameter beyond 5.0 um in 0.1 L of air.			|
+                |----\------------------------------|-------------------------------------------------------|
+                | 26 | Data12 high 8 bits			| Data12 indicates the number of particles				|
+                | 27 | Data12 low 8 bits			| with diameter beyond 10 um in 0.1 L of air.			|
+                |----|------------------------------|-------------------------------------------------------|
+                | 28 | Data13 high 8 bits			| Data13 Reserved										|
+                | 29 | Data13 low 8 bits			|														|
+                |----|------------------------------|-------------------------------------------------------|
+                | 30 | Data and check high 8 bits   | Check code = Start character1 + Start character2 +	|
+                | 31 | Data and check low 8 bits	| ...... + data13 Low 8 bits							|
+                |-----------------------------------|-------------------------------------------------------|
+            */
             if (raw_input.Count() != 32) return;
             if (raw_input[0] != PMS_HEADER1 || raw_input[1] != PMS_HEADER2) return;
 
@@ -535,7 +585,8 @@ namespace DustSensorViewer
             
             Console.WriteLine("{0}, {1},version = {2}, bug = {3}", raw_input[2], raw_input[3], raw_input[28], raw_input[29]);
             
-            if (raw_input[28] == 114)    // PMS-5003 or 1003
+            // 151 comparison below added to resolve an issue with my PMS-5003 - Newer firmware?
+            if (raw_input[28] == 114 || raw_input[28] == 151)    // PMS-5003 or 1003
                 update("PMS5003", Air_data[2], Air_data[1], Air_data[0]);
             if (raw_input[28] == 128)    // PMS-7003
             {
