@@ -123,8 +123,6 @@ namespace DustSensorViewer
                 if(serialPort1.IsOpen)
                 {
                     button_con.Text = "Disconnect";
-                    button_con.ForeColor = Color.Black;
-                    button_con.BackColor = Color.Lime;
 
                 }
             }
