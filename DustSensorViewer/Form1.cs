@@ -134,8 +134,6 @@ namespace DustSensorViewer
                 if (!serialPort1.IsOpen)
                 {
                     button_con.Text = "Connect";
-                    button_con.ForeColor = Color.Lime;
-                    button_con.BackColor = Color.Black;
                 }
             }
         }
